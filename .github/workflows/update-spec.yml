@@ -1,0 +1,33 @@
+name: Update OpenAPI Spec
+
+on:
+  schedule:
+    - cron: '0 5 * * *'  # Run every day at 05:00 UTC
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  update-spec:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout master branch
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download OpenAPI spec
+        run: |
+          curl -L -o openapi.yaml https://app.stainless.com/api/spec/documented/openai/openapi.documented.yml
+
+      - name: Check for changes and commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet openapi.yaml; then
+            echo "No changes detected"
+          else
+            git add openapi.yaml
+            git commit -m "Update OpenAPI spec - $(date -u +"%Y-%m-%d")"
+            git push
+          fi
